@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>DCF manner of death</title>
+		<script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
+		<style type="text/css">
+			
+			body {
+				background-color: white;
+				font-family: Helvetica, Arial, sans-serif;
+			}
+
+			h1 {
+				font-size: 32px;
+				margin: 0;
+			}
+
+			#container {
+				width: 720px;
+				margin-left: auto;
+				margin-right: auto;
+				margin-top: 50px;
+				padding: 15px;
+				background-color: white;
+				box-shadow: 3px 3px 5px 6px #ccc;
+			}
+			
+			.attrib {
+				font-size: 12px;
+				font-style: italic;
+				text-anchor: start;
+			}
+
+			svg {
+				background-color: white;
+			}
+
+			rect {
+				fill: #9e1a1e;
+			}
+			
+			g.bar {
+				cursor: pointer;
+			}
+			
+			g.bar text {
+				font-size: 20px;
+				font-weight: bold;
+				fill: black;
+				text-anchor: start;
+			}
+
+			g.bar:hover rect {
+				fill: black;
+			}
+			
+			.axis path,
+			.axis line {
+				fill: none;
+				stroke: black;
+				shape-rendering: crispEdges;
+			}
+			
+			.axis text {
+				font-family: sans-serif;
+				font-size: 16px;
+			}
+
+			.y.axis path,
+			.y.axis line {
+				opacity: 0;
+			}
+
+		</style>
+	</head>
+	<body>
+
+		<div id="container">
+
+			<h1>Manner of death in abuse and neglect cases, 2009 — 2013</h1>
+			
+		</div>
+		
+		<script type="text/javascript">		
+
+
+			var w = 680;
+			var h = 300;
+			var padding = [ 20, 30, 75, 150 ];  //Top, right, bottom, left
+
+
+			// not setting .domain for either scale, since don't have data yet
+			var widthScale = d3.scale.linear()
+								.range([ 0, w - padding[1] - padding[3] ]);
+			
+			var heightScale = d3.scale.ordinal()
+								.rangeRoundBands([ padding[0], h - padding[2] ], 0.1);
+
+
+			// create axes — again, only scales, not tick marks/labels
+			var xAxis = d3.svg.axis()
+							.scale(widthScale)
+							.ticks(4)
+							.orient("bottom");
+
+			var yAxis = d3.svg.axis()
+							.scale(heightScale)
+							.orient("left");
+
+
+
+			var svg = d3.select("#container")
+						.append("svg")
+						.attr("width", w)
+						.attr("height", h);
+
+
+
+			// remember: need to allow read permission
+			d3.csv("https://gist.githubusercontent.com/shawnmusgrave/a3f4b434e21839e8fd99/raw/7625262257844da1822aa654a3681fc9d5923b7b/dcf2_manner_death.csv", function(data) {
+				
+
+				// loop through and find max value, set upper domain to that 
+				widthScale.domain([ 0, d3.max(data, function(d) {
+					return +d.count;
+				}) ]);
+
+				// use number of entries in data for heightScale
+				heightScale.domain(data.map(function(d) { return d.manner; } ));
+
+				
+				//Bind data to groups (not bars directly)
+				var groups = svg.selectAll("g")
+								.data(data)
+								.enter()
+								.append("g")
+								.attr("class", "bar");
+				
+				//append one rect to svg for each data entry
+				var rects = groups.append("rect");
+
+				// assign x, y, width, height, fill, title text for each rect
+				rects.attr("x", padding[3])
+					.attr("y", function(d) {
+						return heightScale(d.manner);
+					})
+					.attr("height", heightScale.rangeBand())
+					.attr("width", 0);
+					
+				//Add a text element to each group
+				var text = groups.append("text")
+					.attr("x", padding[3])
+					
+					//.attr("x", function(d) {
+					//	return padding[3] + widthScale(d.count) + 8;
+					//})
+					.attr("y", function(d) {
+						return heightScale(d.manner) + 22;
+					})
+					.text(function(d) {
+						return d.count;
+					});
+				
+				rects.transition()
+					.delay(function(d,i){
+						return i*75})
+					.ease("linear")
+					.duration(750)
+					.attr("width", function(d) {
+						return widthScale(d.count);
+					})
+					.attr("height", heightScale.rangeBand());
+
+				text.transition()
+					.delay(function(d,i){
+						return i*75})
+					.ease("linear")
+					.duration(750)
+					.attr("x", function(d) {
+						return padding[3] + widthScale(d.count) + 8;
+					})
+				
+				svg.append("g")
+					.attr("class", "x axis")
+					.attr("transform", "translate(" + padding[3] + "," + (h - padding[2]) + ")")
+					.call(xAxis);
+
+			
+				svg.append("g")
+					.attr("class", "y axis")
+					.attr("transform", "translate(" + padding[3] + ",0)")
+					.call(yAxis);
+			
+			});
+
+			svg.append("text")
+				.attr("class", "attrib")
+				.append('svg:tspan')
+	  				.attr('x', 9)
+	  				.attr('y', h-18)
+					.text("Data: Registry of Vital Records and Statistics, Boston Registry Division,") 
+				.append('svg:tspan')
+	  				.attr('x', 9)
+	  				.attr('y', h-6)
+					.text("Worcester District Attorney's Office, Athol Town Hall")
+				.append('svg:tspan')
+	  				.attr('x', w)
+	  				.attr('y', h-6)
+	  				.style("text-anchor", "end")
+					.text("Graphic: Shawn Musgrave for NECIR")
+	
+				
+			
+		</script>
+		
+	</body>
+</html>
